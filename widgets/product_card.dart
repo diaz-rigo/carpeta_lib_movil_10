@@ -133,15 +133,20 @@ class ProductCard extends StatelessWidget {
                   cart.addItem(
                     id,
                     title,
-                    price,imageUrl
+                    price,
+                    imageUrl,
                   );
 
-                  // Imprimir en consola el contenido del carrito
+// Imprimir en consola el contenido completo del carrito
                   for (var item in cart.items) {
-                    print(
-                        'Producto: ${item.name}, Cantidad: ${item.quantity}, Precio: ${item.price}');
+                    print('ID: ${item.id}, '
+                        'Producto: ${item.name}, '
+                        'Cantidad: ${item.quantity}, '
+                        'Precio: ${item.price}, '
+                        'Imagen: ${item.imageUrl}');
                   }
                   print('Total: ${cart.totalAmount}');
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Producto añadido al carrito!'),

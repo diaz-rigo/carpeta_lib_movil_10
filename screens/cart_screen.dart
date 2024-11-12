@@ -1,9 +1,44 @@
 import 'package:austins/models/cart.dart';
-// import 'package:austins/widgets/checkout_button.dart'; // Importa el widget de botón de pago
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class CartScreen extends StatelessWidget {
+Future<void> saveUserSession(String userId) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('userId', userId);
+}
+
+Future<void> deleteUserSession() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.remove('userId');
+}
+
+Future<bool> checkUserSession() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.containsKey('userId');
+}
+
+class CartScreen extends StatefulWidget {
+  @override
+  _CartScreenState createState() => _CartScreenState();
+}
+
+class _CartScreenState extends State<CartScreen> {
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  bool isLoggedIn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeSession();
+  }
+
+  Future<void> _initializeSession() async {
+    isLoggedIn = await checkUserSession();
+    setState(() {}); // Actualiza el estado para reflejar el ícono correspondiente
+  }
+
   @override
   Widget build(BuildContext context) {
     final cart = Provider.of<Cart>(context);
@@ -14,7 +49,8 @@ class CartScreen extends StatelessWidget {
           'Carrito de Compras',
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
-        backgroundColor: const Color.fromARGB(255, 248, 210, 187), // Color pastel suave
+// Color.fromARGB(255, 248, 210, 187)        
+                backgroundColor: const Color.fromARGB(255, 248, 210, 187),
       ),
       body: cart.items.isEmpty
           ? Center(
@@ -116,7 +152,63 @@ class CartScreen extends StatelessWidget {
                         'Total: \$${cart.totalAmount.toStringAsFixed(2)}',
                         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
                       ),
-                      // CheckoutButton(cartItems: cart.items), // Usa CheckoutButton en lugar del botón de "Pagar"
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          textStyle: TextStyle(fontSize: 18),
+                        ),
+                        onPressed: () async {
+                          bool isAuthenticated = await checkUserSession();
+
+                          if (isAuthenticated) {
+                            Navigator.pushNamed(context, '/checkout');
+                          } else {
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: Text('Inicia sesión'),
+                                content: Text(
+                                  'Para continuar con el pago, inicia sesión o procede como invitado.',
+                                ),
+                                actions: <Widget>[
+                                  ElevatedButton.icon(
+                                    icon: Icon(Icons.login),
+                                    label: Text("Iniciar sesión con Google"),
+                                    onPressed: () async {
+                                      try {
+                                        final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+                                        if (googleUser != null) {
+                                          await saveUserSession(googleUser.id);
+                                          setState(() {
+                                            isLoggedIn = true;
+                                          });
+                                          Navigator.of(context).pop(); // Cierra el modal
+                                        }
+                                      } catch (error) {
+                                        print("Error de autenticación: $error");
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blue,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    child: Text('Invitado'),
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                      Navigator.pushNamed(context, '/guestCheckout');
+                                    },
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                        },
+                        child: Text('Pagar'),
+                      ),
                     ],
                   ),
                 ),
