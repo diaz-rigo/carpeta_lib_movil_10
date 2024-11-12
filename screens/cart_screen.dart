@@ -25,8 +25,10 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
-  bool isLoggedIn = false;
+  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: [
+    'email',
+    'https://www.googleapis.com/auth/userinfo.profile',
+  ]);  bool isLoggedIn = false;
 
   @override
   void initState() {

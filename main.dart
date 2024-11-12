@@ -1,8 +1,10 @@
 // import 'package:flutter/foundation.dart';
+import 'package:austins/provider/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:austins/models/cart.dart';
 import 'utils/routes.dart';
+
 // import 'package:flutter_stripe/flutter_stripe.dart';
 // import 'package:flutter/foundation.dart' show kIsWeb;
 // import 'package:flutter_stripe/flutter_stripe.dart';
@@ -23,6 +25,8 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => cart),
+                ChangeNotifierProvider(create: (_) => UserProvider()),
+
       ],
       child: const MyApp(),
     ),

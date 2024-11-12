@@ -64,13 +64,11 @@ class _GuestCheckoutScreenState extends State<GuestCheckoutScreen> {
 
     try {
       final response = await http.post(
-        // Uri.parse('https://austin-b.onrender.com/stripe/create-checkout-session'),
-        // Uri.parse('http://localhost:3000/stripe/create-checkout-session-flutter'),
         Uri.parse('https://austin-b.onrender.com/stripe/create-checkout-session-flutter'),
         headers: {'Content-Type': 'application/json'},
         body: body,
       );
-// response.body
+
       if (response.statusCode == 200) {
         final sessionData = jsonDecode(response.body);
         final sessionUrl = sessionData['url'];
@@ -90,64 +88,64 @@ class _GuestCheckoutScreenState extends State<GuestCheckoutScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Checkout como Invitado'),
-                        backgroundColor: const Color.fromARGB(255, 248, 210, 187),
-// 
-        // backgroundColor: Color.fromARGB(255, 248, 210, 187),
+        backgroundColor: const Color.fromARGB(255, 248, 210, 187),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Información del Cliente',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 248, 210, 187)),
-              ),
-              _buildTextField(
-                icon: Icons.person,
-                labelText: 'Nombre',
-                hintText: 'Ingresa tu nombre',
-                onSave: (value) => _name = value!,
-              ),
-              _buildTextField(
-                icon: Icons.person_outline,
-                labelText: 'Apellido Paterno',
-                hintText: 'Ingresa tu apellido paterno',
-                onSave: (value) => _paternalLastname = value!,
-              ),
-              _buildTextField(
-                icon: Icons.person_outline,
-                labelText: 'Apellido Materno',
-                hintText: 'Ingresa tu apellido materno',
-                onSave: (value) => _maternalLastname = value!,
-              ),
-              _buildTextField(
-                icon: Icons.email,
-                labelText: 'Correo Electrónico',
-                hintText: 'Ingresa tu correo electrónico',
-                onSave: (value) => _email = value!,
-              ),
-              _buildTextField(
-                icon: Icons.phone,
-                labelText: 'Teléfono',
-                hintText: 'Ingresa tu número de teléfono',
-                onSave: (value) => _phone = value!,
-              ),
-              _buildTextField(
-                icon: Icons.note,
-                labelText: 'Instrucciones Adicionales',
-                hintText: 'Ej: sin nuez en el pastel',
-                onSave: (value) => _instruction = value ?? '',
-              ),
-              SizedBox(height: 20),
-              Text(
-                'Resumen del Carrito',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 248, 210, 187)),
-              ),
-              Expanded(
-                child: ListView.builder(
+      body: SingleChildScrollView( // Aquí envuelves el contenido en un SingleChildScrollView
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Información del Cliente',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 248, 210, 187)),
+                ),
+                _buildTextField(
+                  icon: Icons.person,
+                  labelText: 'Nombre',
+                  hintText: 'Ingresa tu nombre',
+                  onSave: (value) => _name = value!,
+                ),
+                _buildTextField(
+                  icon: Icons.person_outline,
+                  labelText: 'Apellido Paterno',
+                  hintText: 'Ingresa tu apellido paterno',
+                  onSave: (value) => _paternalLastname = value!,
+                ),
+                _buildTextField(
+                  icon: Icons.person_outline,
+                  labelText: 'Apellido Materno',
+                  hintText: 'Ingresa tu apellido materno',
+                  onSave: (value) => _maternalLastname = value!,
+                ),
+                _buildTextField(
+                  icon: Icons.email,
+                  labelText: 'Correo Electrónico',
+                  hintText: 'Ingresa tu correo electrónico',
+                  onSave: (value) => _email = value!,
+                ),
+                _buildTextField(
+                  icon: Icons.phone,
+                  labelText: 'Teléfono',
+                  hintText: 'Ingresa tu número de teléfono',
+                  onSave: (value) => _phone = value!,
+                ),
+                _buildTextField(
+                  icon: Icons.note,
+                  labelText: 'Instrucciones Adicionales',
+                  hintText: 'Ej: sin nuez en el pastel',
+                  onSave: (value) => _instruction = value ?? '',
+                ),
+                SizedBox(height: 20),
+                Text(
+                  'Resumen del Carrito',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 248, 210, 187)),
+                ),
+                ListView.builder(
+                  shrinkWrap: true, // Evita overflow al ajustar el ListView al contenido
+                  physics: NeverScrollableScrollPhysics(), // Desactiva el scroll del ListView
                   itemCount: _cartProducts.length,
                   itemBuilder: (context, index) {
                     final product = _cartProducts[index];
@@ -158,26 +156,26 @@ class _GuestCheckoutScreenState extends State<GuestCheckoutScreen> {
                     );
                   },
                 ),
-              ),
-              SizedBox(height: 10),
-              Text(
-                'Total: \$$_totalneto',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.brown[600]),
-              ),
-              SizedBox(height: 20),
-              Center(
-                child: ElevatedButton.icon(
-                  onPressed: _createSession,
-                  icon: Icon(Icons.payment),
-                  label: Text('Pagar Ahora'),
-                  style: ElevatedButton.styleFrom(
-                    iconColor: Color.fromARGB(255, 248, 210, 187),
-                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                    textStyle: TextStyle(fontSize: 16),
+                SizedBox(height: 10),
+                Text(
+                  'Total: \$$_totalneto',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.brown[600]),
+                ),
+                SizedBox(height: 20),
+                Center(
+                  child: ElevatedButton.icon(
+                    onPressed: _createSession,
+                    icon: Icon(Icons.payment),
+                    label: Text('Pagar Ahora'),
+                    style: ElevatedButton.styleFrom(
+                      iconColor: Color.fromARGB(255, 248, 210, 187),
+                      padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                      textStyle: TextStyle(fontSize: 16),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

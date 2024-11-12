@@ -1,12 +1,17 @@
 import 'package:austins/models/cart.dart';
+import 'package:austins/provider/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-Future<void> saveUserSession(String userId) async {
+Future<void> saveUserSession(String userId, String userName, String userEmail,
+    String userPhotoUrl) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setString('userId', userId);
+  await prefs.setString('userName', userName);
+  await prefs.setString('userEmail', userEmail);
+  await prefs.setString('userPhotoUrl', userPhotoUrl); // Guardar URL de la foto
 }
 
 Future<void> deleteUserSession() async {
@@ -19,9 +24,23 @@ Future<bool> checkUserSession() async {
   return prefs.containsKey('userId');
 }
 
+Future<Map<String, String?>> getUserSession() async {
+  final prefs = await SharedPreferences.getInstance();
+  final userId = prefs.getString('userId');
+  final userName = prefs.getString('userName');
+  final userEmail = prefs.getString('userEmail');
+
+  return {
+    'userId': userId,
+    'userName': userName,
+    'userEmail': userEmail,
+  };
+}
+
 class CustomHeader extends StatefulWidget implements PreferredSizeWidget {
   final bool isLoggedIn; // Agregar el parámetro isLoggedIn
-  const CustomHeader({Key? key, required this.isLoggedIn}) : super(key: key); // Modificar el constructor
+  const CustomHeader({Key? key, required this.isLoggedIn})
+      : super(key: key); // Modificar el constructor
 
   @override
   _CustomHeaderState createState() => _CustomHeaderState();
@@ -31,8 +50,10 @@ class CustomHeader extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _CustomHeaderState extends State<CustomHeader> {
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
-  bool isLoggedIn = false;
+  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: [
+    'email',
+    'https://www.googleapis.com/auth/userinfo.profile',
+  ]);  bool isLoggedIn = false;
 
   @override
   void initState() {
@@ -42,7 +63,8 @@ class _CustomHeaderState extends State<CustomHeader> {
 
   Future<void> _initializeSession() async {
     isLoggedIn = await checkUserSession();
-    setState(() {}); // Actualiza el estado para reflejar el ícono correspondiente
+    setState(
+        () {}); // Actualiza el estado para reflejar el ícono correspondiente
   }
 
   void _logoutUser() async {
@@ -55,12 +77,14 @@ class _CustomHeaderState extends State<CustomHeader> {
 
   void _navigateToProfile(BuildContext context) {
     // Aquí reemplaza `ProfileScreen` con el nombre de tu pantalla de perfil
-    Navigator.pushNamed(context, '/profile'); // Asegúrate de que la ruta esté definida en tu MaterialApp
+    Navigator.pushNamed(context,
+        '/profile'); // Asegúrate de que la ruta esté definida en tu MaterialApp
   }
 
   @override
   Widget build(BuildContext context) {
     final cart = Provider.of<Cart>(context);
+    final userProvider = Provider.of<UserProvider>(context);
 
     return AppBar(
       backgroundColor: const Color.fromARGB(255, 248, 210, 187),
@@ -122,39 +146,39 @@ class _CustomHeaderState extends State<CustomHeader> {
         ),
         // Badge para favoritos
         Stack(
-          // children: [
-          //   IconButton(
-          //     icon: Icon(Icons.favorite, color: Colors.brown[800]),
-          //     onPressed: () {
-          //       Navigator.pushNamed(context, '/favorites');
-          //     },
-          //     tooltip: 'Favorites',
-          //   ),
-          //   Positioned(
-          //     right: 8,
-          //     top: 8,
-          //     child: Container(
-          //       padding: const EdgeInsets.all(2),
-          //       decoration: BoxDecoration(
-          //         color: Colors.red,
-          //         borderRadius: BorderRadius.circular(10),
-          //       ),
-          //       constraints: const BoxConstraints(
-          //         minWidth: 16,
-          //         minHeight: 16,
-          //       ),
-          //       child: const Text(
-          //         '5',
-          //         style: TextStyle(
-          //           color: Colors.white,
-          //           fontSize: 10,
-          //         ),
-          //         textAlign: TextAlign.center,
-          //       ),
-          //     ),
-          //   ),
-          // ],
-        ),
+            // children: [
+            //   IconButton(
+            //     icon: Icon(Icons.favorite, color: Colors.brown[800]),
+            //     onPressed: () {
+            //       Navigator.pushNamed(context, '/favorites');
+            //     },
+            //     tooltip: 'Favorites',
+            //   ),
+            //   Positioned(
+            //     right: 8,
+            //     top: 8,
+            //     child: Container(
+            //       padding: const EdgeInsets.all(2),
+            //       decoration: BoxDecoration(
+            //         color: Colors.red,
+            //         borderRadius: BorderRadius.circular(10),
+            //       ),
+            //       constraints: const BoxConstraints(
+            //         minWidth: 16,
+            //         minHeight: 16,
+            //       ),
+            //       child: const Text(
+            //         '5',
+            //         style: TextStyle(
+            //           color: Colors.white,
+            //           fontSize: 10,
+            //         ),
+            //         textAlign: TextAlign.center,
+            //       ),
+            //     ),
+            //   ),
+            // ],
+            ),
         IconButton(
           icon: Icon(Icons.search, color: Colors.brown[800]),
           onPressed: () {
@@ -164,15 +188,22 @@ class _CustomHeaderState extends State<CustomHeader> {
         ),
         // Icono de perfil o login/logout según el estado
         IconButton(
-          icon: Icon(
-            isLoggedIn ? Icons.person : Icons.login,
-            color: Colors.brown[800],
-          ),
-    onPressed: () {
+          icon: userProvider.userPhotoUrl != null
+              ? CircleAvatar(
+                  backgroundImage: NetworkImage(userProvider.userPhotoUrl!),
+                  radius: 15,
+                )
+              : Icon(
+                  widget.isLoggedIn ? Icons.person : Icons.login,
+                  color: Colors.brown[800],
+                ),
+          onPressed: () {
             if (widget.isLoggedIn) {
-              _navigateToProfile(context); // Navega a la pantalla de perfil si está logueado
+              _navigateToProfile(
+                  context); // Navega a la pantalla de perfil si está logueado
             } else {
-              _showLoginModal(context); // Muestra el modal de login si no está logueado
+              _showLoginModal(
+                  context); // Muestra el modal de login si no está logueado
             }
           },
           tooltip: widget.isLoggedIn ? 'Ir a perfil' : 'Login',
@@ -238,13 +269,38 @@ class _CustomHeaderState extends State<CustomHeader> {
                 label: Text("Iniciar sesión con Google"),
                 onPressed: () async {
                   try {
-                    final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+                    final GoogleSignInAccount? googleUser =
+                        await _googleSignIn.signIn();
                     if (googleUser != null) {
-                      await saveUserSession(googleUser.id);
+                      String userPhotoUrl = googleUser.photoUrl ??
+                          ''; // Si es null, usa una cadena vacía
+                      // Imprimir en la consola los datos del usuario
+                      print('-------------------------------${googleUser}');
+                      print('User ID: ${googleUser.id}');
+                      print('Display Name: ${googleUser.displayName}');
+                      print('Email: ${googleUser.email}');
+                      print('Photo URL: $userPhotoUrl');
+                      print('Google User Details: ${googleUser.toString()}');
+
+                      await saveUserSession(
+                        googleUser.id,
+                        googleUser.displayName ?? '',
+                        googleUser.email,
+                        userPhotoUrl, // Aquí se agrega la URL de la foto de perfil
+                      );
+
+                      // Actualizar el UserProvider con la información del usuario y su foto
+                      Provider.of<UserProvider>(context, listen: false).setUser(
+                        googleUser.id,
+                        googleUser.displayName ?? '',
+                        googleUser.email,
+                        googleUser
+                            .photoUrl, // Se agrega la URL de la foto de perfil
+                      );
                       setState(() {
                         isLoggedIn = true;
                       });
-                      Navigator.of(context).pop(); // Cierra el modal
+                      Navigator.of(context).pop();
                     }
                   } catch (error) {
                     print("Error de autenticación: $error");

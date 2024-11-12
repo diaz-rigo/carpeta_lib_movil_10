@@ -1,4 +1,6 @@
+import 'package:austins/provider/user_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../services/product_service.dart';
 import '../models/product_model.dart';
 import '../widgets/product_card.dart';
@@ -17,18 +19,28 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
-
-  late Future<List<Product>> futureProducts;
+  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: [
+    'email',
+    'https://www.googleapis.com/auth/userinfo.profile',
+  ]);  late Future<List<Product>> futureProducts;
   bool isLoggedIn = false; // Variable para indicar si está logueado
-  Future<void> deleteUserSession() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('userId');
+  
+  // Método para eliminar la sesión del usuario
+Future<void> deleteUserSession() async {
+  final prefs = await SharedPreferences.getInstance();
+  bool removed = await prefs.remove('userId');
+  if (!removed) {
+    print('Advertencia: no se pudo eliminar el userId de SharedPreferences');
   }
+}
+
+  
+  // Inicializa la sesión
   Future<void> _initializeSession() async {
     isLoggedIn = await checkUserSession();
     setState(() {}); // Actualiza el estado para reflejar el ícono correspondiente
   }
+  
   @override
   void initState() {
     _initializeSession();
@@ -36,15 +48,19 @@ class _HomeScreenState extends State<HomeScreen> {
     futureProducts = ProductService().fetchProducts();
   }
 
-  void _logoutUser() async {
+void _logoutUser() async {
+  try {
     await _googleSignIn.signOut();
     await deleteUserSession();
     setState(() {
       isLoggedIn = false;
     });
+  } catch (e) {
+    print('Error al cerrar sesión: $e');
   }
+}
 
-  // Lista de categorías de ejemplo
+
   final List<String> categories = [
     'Repostería',
     'Panadería',
@@ -52,7 +68,6 @@ class _HomeScreenState extends State<HomeScreen> {
     'Postres',
   ];
 
-  // Lista de imágenes para el carrusel
   final List<String> imageList = [
     'https://res.cloudinary.com/dfd0b4jhf/image/upload/v1709327171/public__/mbpozw6je9mm8ycsoeih.jpg',
     'https://res.cloudinary.com/dfd0b4jhf/image/upload/v1709327171/public__/m2z2hvzekjw0xrmjnji4.jpg',
@@ -64,20 +79,42 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+
     return Scaffold(
-      appBar: CustomHeader(
-          isLoggedIn: isLoggedIn), // Utiliza la variable isLoggedIn
+      appBar: CustomHeader(isLoggedIn: isLoggedIn),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: <Widget>[
-            const DrawerHeader(
+            DrawerHeader(
               decoration: BoxDecoration(
                 color: Color.fromARGB(255, 248, 210, 187),
               ),
-              child: Text(
-                'Menú Principal',
-                style: TextStyle(color: Colors.brown, fontSize: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Menú Principal',
+                    style: TextStyle(color: Colors.brown, fontSize: 24),
+                  ),
+                  const SizedBox(height: 10),
+                  if (userProvider.userName != null) ...[
+                    Text(
+                      'Usuario: ${userProvider.userName}',
+                      style: TextStyle(color: Colors.brown, fontSize: 16),
+                    ),
+                    Text(
+                      'Correo: ${userProvider.userEmail}',
+                      style: TextStyle(color: Colors.brown, fontSize: 14),
+                    ),
+                  ] else ...[
+                    Text(
+                      'Usuario no logueado',
+                      style: TextStyle(color: Colors.brown, fontSize: 16),
+                    ),
+                  ],
+                ],
               ),
             ),
             ListTile(
@@ -129,8 +166,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         'id': product.id,
                         'title': product.name,
                         'price': product.price,
-                        'imageUrl':
-                            product.images.isNotEmpty ? product.images[0] : '',
+                        'imageUrl': product.images.isNotEmpty
+                            ? product.images[0]
+                            : '',
                       };
                     }).toList(),
                   );
