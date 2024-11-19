@@ -5,6 +5,7 @@ import 'package:austins/screens/guest_checkout_screen.dart';
 import 'package:flutter/material.dart';
 import '../screens/home_screen.dart';
 import '../screens/product_detail_screen.dart';
+import 'package:austins/screens/purchase_history_screen.dart'; // Importa la nueva pantalla
 
 class AppRoutes {
   static const String home = '/';
@@ -16,6 +17,8 @@ class AppRoutes {
       '/checkout'; // Nueva ruta para el proceso de pago
   static const String authenticatedCheckoutScreen =
       '/authenticatedCheckout'; // Nueva ruta para el checkout autenticado
+  static const String purchaseHistory =
+      '/purchases'; // Nueva ruta para historial de compras
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -47,21 +50,24 @@ class AppRoutes {
         }
 
         return _errorRoute(settings); // Pasa `settings` al manejar el error
-case authenticatedCheckoutScreen:
-  final userData = settings.arguments as Map<String, dynamic>? ?? {};
-  // Asegúrate de valores predeterminados si no están presentes
-  final safeUserData = {
-    "name": userData["name"] ?? "Usuario",
-    "email": userData["email"] ?? "Correo no disponible",
-    "photoUrl": userData["photoUrl"] ?? null,
-    "phone": userData["phone"] ?? "Teléfono no disponible",
-  };
-  return MaterialPageRoute(
-builder: (_) => AuthenticatedCheckoutScreen(),
-  );
+      case authenticatedCheckoutScreen:
+        final userData = settings.arguments as Map<String, dynamic>? ?? {};
+        // Asegúrate de valores predeterminados si no están presentes
+        final safeUserData = {
+          "name": userData["name"] ?? "Usuario",
+          "email": userData["email"] ?? "Correo no disponible",
+          "photoUrl": userData["photoUrl"] ?? null,
+          "phone": userData["phone"] ?? "Teléfono no disponible",
+        };
+        return MaterialPageRoute(
+          builder: (_) => AuthenticatedCheckoutScreen(),
+        );
 
         return _errorRoute(settings);
-
+      case purchaseHistory:
+        return MaterialPageRoute(
+          builder: (_) => PurchaseHistoryScreen(), // Pantalla de historial de compras
+        );
       default:
         return _errorRoute(settings); // Pasa `settings` al manejar el error
     }

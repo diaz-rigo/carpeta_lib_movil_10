@@ -1,4 +1,5 @@
 import 'package:austins/provider/user_provider.dart';
+import 'package:austins/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/product_service.dart';
@@ -22,47 +23,88 @@ class _HomeScreenState extends State<HomeScreen> {
   final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: [
     'email',
     'https://www.googleapis.com/auth/userinfo.profile',
-  ]);  late Future<List<Product>> futureProducts;
+  ]);
+  late Future<List<Product>> futureProducts;
   bool isLoggedIn = false; // Variable para indicar si está logueado
-  
-  // Método para eliminar la sesión del usuario
-Future<void> deleteUserSession() async {
-  final prefs = await SharedPreferences.getInstance();
-  bool removed = await prefs.remove('userId');
-  if (!removed) {
-    print('Advertencia: no se pudo eliminar el userId de SharedPreferences');
-  }
-}
+  late Future<Map<String, dynamic>> futureUserDetails;
+  late Future<List<dynamic>> futureUserPurchases;
 
-  
-  // Inicializa la sesión
+  // Método para eliminar la sesión del usuario
+
+  // Inicializa la sesión // Inicializa la sesiónint totalPurchasesCount = 0; // Variable para almacenar la cantidad de compras totales
+  int totalPurchasesCount =
+      0; // Variable para almacenar la cantidad de compras totales
+
   Future<void> _initializeSession() async {
     isLoggedIn = await checkUserSession();
-    setState(() {}); // Actualiza el estado para reflejar el ícono correspondiente
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    // if (isLoggedIn && userProvider.userEmail != null) {
+      futureUserDetails =
+          UserService().fetchUserByEmail(userProvider.userEmail!);
+
+          print(
+              "Compras obtenidas: ----------------------->>>>>>>>>>>>>>>>>>>$futureUserDetails"); // Verifica si devuelve las compras
+      futureUserPurchases = futureUserDetails.then((user) async {
+        if (user.containsKey('_id')) {
+          final purchases =
+              await UserService().fetchPurchasesByUserId(user['_id']);
+          print(
+              "Compras obtenidas: $purchases"); // Verifica si devuelve las compras
+
+          // Actualiza la cantidad total de compras
+          setState(() {
+            totalPurchasesCount =
+                purchases.length; // Cuenta la cantidad de compras
+          });
+          return purchases;
+        }
+        return []; // Si no hay ID de usuario, devuelve una lista vacía
+      });
+
+      print(
+          "----------------------------------------***********************************");
+      print("Cantidad total de compras: $totalPurchasesCount");
+    // }
   }
-  
+
+  Future<bool> checkUserSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    final email = prefs.getString('email');
+    final id = prefs.getString('id');
+    final name = prefs.getString('name');
+    final token = prefs.getString('token');
+    final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+
+    if (isLoggedIn) {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      userProvider.setUser(email!, id!, name!, token!);
+    }
+
+    return isLoggedIn;
+  }
+
   @override
   void initState() {
     _initializeSession();
     super.initState();
     futureProducts = ProductService().fetchProducts();
   }
-void _logoutUser() async {
-  final userProvider = Provider.of<UserProvider>(context, listen: false);
-  try {
-    await _googleSignIn.signOut();
-    await userProvider.clearUser(); // Limpia datos de memoria y almacenamiento
-    setState(() {
-      isLoggedIn = false;
-    });
-    print('Sesión cerrada y datos del usuario eliminados');
-  } catch (e) {
-    print('Error al cerrar sesión: $e');
+
+  void _logoutUser() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    try {
+      await _googleSignIn.signOut();
+      await userProvider
+          .clearUser(); // Limpia datos de memoria y almacenamiento
+      setState(() {
+        isLoggedIn = false;
+      });
+      print('Sesión cerrada y datos del usuario eliminados');
+    } catch (e) {
+      print('Error al cerrar sesión: $e');
+    }
   }
-}
-
-
-
 
   final List<String> categories = [
     'Repostería',
@@ -128,10 +170,45 @@ void _logoutUser() async {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Configuración'),
+              leading: Icon(Icons.shopping_bag, color: Colors.brown[800]),
+              title: const Text('Mis Compras'),
+              trailing: FutureBuilder<List<dynamic>>(
+                future: isLoggedIn ? futureUserPurchases : Future.value([]),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const CircularProgressIndicator();
+                  } else if (snapshot.hasError) {
+                    return Text(
+                      '0',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.brown,
+                      ),
+                    );
+                  } else if (snapshot.hasData) {
+                    return Text(
+                      '${snapshot.data!.length}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.brown,
+                      ),
+                    );
+                  } else {
+                    return Text(
+                      '0',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.brown,
+                      ),
+                    );
+                  }
+                },
+              ),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.pushNamed(context, '/purchases');
               },
             ),
             ListTile(
@@ -169,9 +246,8 @@ void _logoutUser() async {
                         'id': product.id,
                         'title': product.name,
                         'price': product.price,
-                        'imageUrl': product.images.isNotEmpty
-                            ? product.images[0]
-                            : '',
+                        'imageUrl':
+                            product.images.isNotEmpty ? product.images[0] : '',
                       };
                     }).toList(),
                   );
@@ -181,6 +257,7 @@ void _logoutUser() async {
               },
             ),
           ),
+          
         ],
       ),
     );
