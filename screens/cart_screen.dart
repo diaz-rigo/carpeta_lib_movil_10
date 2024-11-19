@@ -1,12 +1,17 @@
 import 'package:austins/models/cart.dart';
+import 'package:austins/provider/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-Future<void> saveUserSession(String userId) async {
+Future<void> saveUserSession(String userId, String userName, String userEmail,
+    String userPhotoUrl) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setString('userId', userId);
+  await prefs.setString('userName', userName);
+  await prefs.setString('userEmail', userEmail);
+  await prefs.setString('userPhotoUrl', userPhotoUrl); // Guardar URL de la foto
 }
 
 Future<void> deleteUserSession() async {
@@ -28,7 +33,8 @@ class _CartScreenState extends State<CartScreen> {
   final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: [
     'email',
     'https://www.googleapis.com/auth/userinfo.profile',
-  ]);  bool isLoggedIn = false;
+  ]);
+  bool isLoggedIn = false;
 
   @override
   void initState() {
@@ -38,12 +44,15 @@ class _CartScreenState extends State<CartScreen> {
 
   Future<void> _initializeSession() async {
     isLoggedIn = await checkUserSession();
-    setState(() {}); // Actualiza el estado para reflejar el ícono correspondiente
+    setState(
+        () {}); // Actualiza el estado para reflejar el ícono correspondiente
   }
 
   @override
   Widget build(BuildContext context) {
     final cart = Provider.of<Cart>(context);
+        final userProvider = Provider.of<UserProvider>(context);
+
 
     return Scaffold(
       appBar: AppBar(
@@ -51,8 +60,8 @@ class _CartScreenState extends State<CartScreen> {
           'Carrito de Compras',
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
-// Color.fromARGB(255, 248, 210, 187)        
-                backgroundColor: const Color.fromARGB(255, 248, 210, 187),
+// Color.fromARGB(255, 248, 210, 187)
+        backgroundColor: const Color.fromARGB(255, 248, 210, 187),
       ),
       body: cart.items.isEmpty
           ? Center(
@@ -69,7 +78,8 @@ class _CartScreenState extends State<CartScreen> {
                     itemBuilder: (ctx, index) {
                       final item = cart.items[index];
                       return Card(
-                        margin: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                        margin:
+                            EdgeInsets.symmetric(vertical: 10, horizontal: 15),
                         color: Colors.pink[50],
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15),
@@ -100,12 +110,14 @@ class _CartScreenState extends State<CartScreen> {
                             children: [
                               Text(
                                 'Precio: \$${item.price.toStringAsFixed(2)}',
-                                style: TextStyle(fontSize: 16, color: Colors.black54),
+                                style: TextStyle(
+                                    fontSize: 16, color: Colors.black54),
                               ),
                               SizedBox(height: 4),
                               Text(
                                 'Cantidad: ${item.quantity}',
-                                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                                style: TextStyle(
+                                    fontSize: 14, color: Colors.grey[700]),
                               ),
                             ],
                           ),
@@ -113,7 +125,8 @@ class _CartScreenState extends State<CartScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
-                                icon: Icon(Icons.remove, color: Colors.pink[400]),
+                                icon:
+                                    Icon(Icons.remove, color: Colors.pink[400]),
                                 onPressed: () {
                                   if (item.quantity > 1) {
                                     item.quantity--;
@@ -152,18 +165,23 @@ class _CartScreenState extends State<CartScreen> {
                     children: [
                       Text(
                         'Total: \$${cart.totalAmount.toStringAsFixed(2)}',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87),
                       ),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
                           textStyle: TextStyle(fontSize: 18),
                         ),
                         onPressed: () async {
                           bool isAuthenticated = await checkUserSession();
 
-                          if (isAuthenticated) {
-                            Navigator.pushNamed(context, '/checkout');
+if (isAuthenticated && (userProvider.userEmail?.isNotEmpty ?? false)) {
+                            Navigator.pushNamed(
+                                context, '/authenticatedCheckout');
                           } else {
                             showDialog(
                               context: context,
@@ -178,13 +196,41 @@ class _CartScreenState extends State<CartScreen> {
                                     label: Text("Iniciar sesión con Google"),
                                     onPressed: () async {
                                       try {
-                                        final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+                                        final GoogleSignInAccount? googleUser =
+                                            await _googleSignIn.signIn();
                                         if (googleUser != null) {
-                                          await saveUserSession(googleUser.id);
+                                          print(
+                                              '-------------------------------${googleUser}');
+                                          print('User ID: ${googleUser.id}');
+                                          print(
+                                              'Display Name: ${googleUser.displayName}');
+                                          print('Email: ${googleUser.email}');
+                                          print(
+                                              'Google User Details: ${googleUser.toString()}');
+     String userPhotoUrl = googleUser.photoUrl ??
+                          ''; // Si es null, usa una cadena vacía
+                                          await (
+                                            googleUser.id,
+                                            googleUser.displayName ?? '',
+                                            googleUser.email,
+                                            userPhotoUrl, // Aquí se agrega la URL de la foto de perfil
+                                          );
+
+                                          // Actualizar el UserProvider con la información del usuario y su foto
+                                          Provider.of<UserProvider>(context,
+                                                  listen: false)
+                                              .setUser(
+                                            googleUser.id,
+                                            googleUser.displayName ?? '',
+                                            googleUser.email,
+                                            googleUser
+                                                .photoUrl, // Se agrega la URL de la foto de perfil
+                                          );
                                           setState(() {
                                             isLoggedIn = true;
                                           });
-                                          Navigator.of(context).pop(); // Cierra el modal
+                                          Navigator.of(context)
+                                              .pop(); // Cierra el modal
                                         }
                                       } catch (error) {
                                         print("Error de autenticación: $error");
@@ -201,7 +247,8 @@ class _CartScreenState extends State<CartScreen> {
                                     child: Text('Invitado'),
                                     onPressed: () {
                                       Navigator.pop(context);
-                                      Navigator.pushNamed(context, '/guestCheckout');
+                                      Navigator.pushNamed(
+                                          context, '/guestCheckout');
                                     },
                                   ),
                                 ],

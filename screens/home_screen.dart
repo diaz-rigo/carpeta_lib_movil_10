@@ -47,18 +47,21 @@ Future<void> deleteUserSession() async {
     super.initState();
     futureProducts = ProductService().fetchProducts();
   }
-
 void _logoutUser() async {
+  final userProvider = Provider.of<UserProvider>(context, listen: false);
   try {
     await _googleSignIn.signOut();
-    await deleteUserSession();
+    await userProvider.clearUser(); // Limpia datos de memoria y almacenamiento
     setState(() {
       isLoggedIn = false;
     });
+    print('Sesión cerrada y datos del usuario eliminados');
   } catch (e) {
     print('Error al cerrar sesión: $e');
   }
 }
+
+
 
 
   final List<String> categories = [

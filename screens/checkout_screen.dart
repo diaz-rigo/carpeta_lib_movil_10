@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_custom_tabs/flutter_custom_tabs.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CheckoutScreen extends StatelessWidget {
   final String sessionUrl;
 
   CheckoutScreen({required this.sessionUrl});
+  Future<void> clearCart() async {
 
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('cart'); // Elimina el carrito almacenado
+  }
   Future<void> launchCheckout(BuildContext context) async {
     try {
       await launchUrl(
@@ -37,8 +43,6 @@ class CheckoutScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Color.fromARGB(255, 248, 210, 187), // Color claro
@@ -46,20 +50,25 @@ class CheckoutScreen extends StatelessWidget {
           children: [
             Icon(Icons.payment, color: Colors.brown), // Ícono personalizado
             SizedBox(width: 8),
-            const Text('Checkout', style: TextStyle(color: Colors.brown)), // Color del texto
+            Text('Checkout', style: TextStyle(color: Colors.brown)),
           ],
         ),
       ),
       body: Center(
-        child: ElevatedButton.icon( // Botón con ícono y texto
+        child: ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
             iconColor: Colors.brown, // Color del botón
             backgroundColor: Color.fromARGB(255, 248, 210, 187), // Color del texto y del ícono
           ),
-          icon: Icon(Icons.shopping_cart, color: Color.fromARGB(255, 223, 131, 73)), // Ícono en el botón
-          label: const Text('Proceder al pago'),
-          onPressed: () => launchCheckout(context),
-        ),
+          icon: Icon(Icons.shopping_cart, color: Color.fromARGB(255, 223, 131, 73)),
+          label: Text('Proceder al pago'),
+onPressed: () async {
+            // Primero vaciar el carrito
+            await clearCart();
+
+            // Luego proceder con el pago
+            launchCheckout(context);
+          },        ),
       ),
     );
   }

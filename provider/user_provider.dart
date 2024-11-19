@@ -1,39 +1,55 @@
-import 'package:austins/widgets/custom_header.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UserProvider extends ChangeNotifier {
   String? _userId;
   String? _userName;
   String? _userEmail;
-  String? _userPhotoUrl; // Nueva variable para la URL de la foto de perfil
+  String? _userPhotoUrl;
 
   String? get userId => _userId;
   String? get userName => _userName;
   String? get userEmail => _userEmail;
   String? get userPhotoUrl => _userPhotoUrl;
 
-void setUser(String userId, String userName, String userEmail, String? userPhotoUrl) {
-  _userId = userId;
-  _userName = userName;
-  _userEmail = userEmail;
-  _userPhotoUrl = userPhotoUrl;
-  notifyListeners();
-}
+  Future<void> setUser(
+      String userId, String userName, String userEmail, String? userPhotoUrl) async {
+    _userId = userId;
+    _userName = userName;
+    _userEmail = userEmail;
+    _userPhotoUrl = userPhotoUrl;
 
-  Future<void> loadUser() async {
-    final session = await getUserSession();
-    _userId = session['userId'];
-    _userName = session['userName'];
-    _userEmail = session['userEmail'];
-    _userPhotoUrl = session['userPhotoUrl']; // Cargar foto desde la sesión si existe
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('userId', userId);
+    await prefs.setString('userName', userName);
+    await prefs.setString('userEmail', userEmail);
+    if (userPhotoUrl != null) {
+      await prefs.setString('userPhotoUrl', userPhotoUrl);
+    }
     notifyListeners();
   }
 
-  void clearUser() {
+  Future<void> loadUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    _userId = prefs.getString('userId');
+    _userName = prefs.getString('userName');
+    _userEmail = prefs.getString('userEmail');
+    _userPhotoUrl = prefs.getString('userPhotoUrl');
+    notifyListeners();
+  }
+
+  Future<void> clearUser() async {
     _userId = null;
     _userName = null;
     _userEmail = null;
     _userPhotoUrl = null;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('userId');
+    await prefs.remove('userName');
+    await prefs.remove('userEmail');
+    await prefs.remove('userPhotoUrl');
+
     notifyListeners();
   }
 }
