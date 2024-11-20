@@ -222,44 +222,232 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      body: Column(
-        children: [
-          CarruselWidget(imageList: imageList),
-          const SizedBox(height: 16.0),
-          CategoryButtons(
-            categories: categories,
-            onCategorySelected: _onCategorySelected,
-          ),
-          const SizedBox(height: 16.0),
-          Expanded(
-            child: FutureBuilder<List<Product>>(
-              future: futureProducts,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                  return ProductCarousel(
-                    products: snapshot.data!.map((product) {
-                      return {
-                        'id': product.id,
-                        'title': product.name,
-                        'price': product.price,
-                        'imageUrl':
-                            product.images.isNotEmpty ? product.images[0] : '',
-                      };
-                    }).toList(),
-                  );
-                } else {
-                  return const Center(child: Text('No products found.'));
-                }
-              },
-            ),
-          ),
-          
-        ],
+
+
+     body: SingleChildScrollView(  // Agregar un ScrollView para evitar que los elementos se corten
+  child: Column(
+    children: [
+      // Carrusel de imágenes
+      CarruselWidget(imageList: imageList),
+      const SizedBox(height: 16.0),
+
+      // Botones de categorías
+      CategoryButtons(
+        categories: categories,
+        onCategorySelected: _onCategorySelected,
       ),
+      const SizedBox(height: 16.0),
+
+      // Carrousel de productos (con FutureBuilder)
+      FutureBuilder<List<Product>>(
+        future: futureProducts,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+            return ProductCarousel(
+              products: snapshot.data!.map((product) {
+                return {
+                  'id': product.id,
+                  'title': product.name,
+                  'price': product.price,
+                  'imageUrl': product.images.isNotEmpty ? product.images[0] : '',
+                };
+              }).toList(),
+            );
+          } else {
+            return const Center(child: Text('No products found.'));
+          }
+        },
+      ),
+
+
+
+const SizedBox(height: 16.0),  // Separador para el pie de página
+Padding(
+  padding: const EdgeInsets.all(16.0),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      // Título de la sección "Sobre Nosotros"
+      Text(
+        'Sobre Nosotros',
+        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          color: const Color.fromARGB(255, 181, 76, 16), // Color atractivo para el título
+          fontWeight: FontWeight.bold,
+          fontSize: 24.0, // Tamaño de fuente más grande
+        ),
+      ),
+      const SizedBox(height: 16.0),
+
+      // Descripción de la empresa de repostería
+      Text(
+        'En Austins, nos especializamos en crear pasteles y postres deliciosos para cualquier ocasión. Con años de experiencia en la repostería artesanal, ofrecemos productos frescos y de calidad.',
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Colors.brown[700], // Color suave para el texto
+          fontSize: 16.0,
+        ),
+        textAlign: TextAlign.center,
+      ),
+      const SizedBox(height: 16.0),
+
+      // Título de la sección "Nuestros Productos"
+      Text(
+        'Nuestros Productos',
+        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          color: const Color.fromARGB(255, 181, 76, 16),
+          fontWeight: FontWeight.bold,
+          fontSize: 24.0,
+        ),
+      ),
+      const SizedBox(height: 16.0),
+
+      // Imagen de algunos productos (pasteles, galletas, etc.)
+Container(
+  width: double.infinity,
+  height: 200,
+  decoration: BoxDecoration(
+    borderRadius: BorderRadius.circular(8.0),
+  ),
+  child: ClipRRect(
+    borderRadius: BorderRadius.circular(8.0),
+    child: Image.network(
+      'https://res.cloudinary.com/dfd0b4jhf/image/upload/v1709327171/public__/mbpozw6je9mm8ycsoeih.jpg',
+    
+      fit: BoxFit.cover,
+      loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
+        if (loadingProgress == null) {
+          return child;
+        } else {
+          return Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded / (loadingProgress.expectedTotalBytes ?? 1)
+                  : null,
+            ),
+          );
+        }
+      },
+      errorBuilder: (BuildContext context, Object error, StackTrace? stackTrace) {
+        return Center(child: Text('No se pudo cargar la imagen.'));
+      },
+    ),
+  ),
+),
+const SizedBox(height: 16.0),
+
+      // Título de la sección "Testimonios"
+      Text(
+        'Testimonios de Clientes',
+        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          color: const Color.fromARGB(255, 181, 76, 16),
+          fontWeight: FontWeight.bold,
+          fontSize: 24.0,
+        ),
+      ),
+      const SizedBox(height: 16.0),
+
+      // Testimonio de cliente
+      Text(
+        '"El pastel de bodas que pedimos fue un éxito total. ¡Delicioso y hermoso!"\n- Ana G.',
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Colors.brown[600],
+          fontStyle: FontStyle.italic,
+        ),
+        textAlign: TextAlign.center,
+      ),
+      const SizedBox(height: 16.0),
+
+      // Título de la sección "Suscripción al Newsletter"
+      Text(
+        'Suscríbete a nuestro Newsletter',
+        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          color: const Color.fromARGB(255, 181, 76, 16),
+          fontWeight: FontWeight.bold,
+          fontSize: 24.0,
+        ),
+      ),
+      const SizedBox(height: 16.0),
+
+      // Campo de texto para suscripción
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40.0),
+        child: TextField(
+          decoration: InputDecoration(
+            labelText: 'Introduce tu email',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            fillColor: Colors.white,
+            filled: true,
+          ),
+        ),
+      ),
+      const SizedBox(height: 16.0),
+
+      // Footer mejorado con enlaces y contacto
+      Container(
+        padding: const EdgeInsets.symmetric(vertical: 16.0),
+        decoration: BoxDecoration(
+          color: Color(0xFFF8E1D4), // Fondo suave de color pastel
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+        child: Column(
+          children: [
+            Text(
+              '© 2024 Pastelería Austins',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.brown[700],
+                fontSize: 14.0,
+              ),
+            ),
+            const SizedBox(height: 8.0),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.facebook),
+                  color: Colors.blue[600], // Color atractivo para Facebook
+                  onPressed: () {
+                    // Lógica para abrir el enlace de Facebook
+                  },
+                  tooltip: 'Facebook',
+                ),
+                IconButton(
+                  icon: const Icon(Icons.facebook),
+                  color: Colors.purple[600], // Color atractivo para Instagram
+                  onPressed: () {
+                    // Lógica para abrir el enlace de Instagram
+                  },
+                  tooltip: 'Instagram',
+                ),
+                IconButton(
+                  icon: const Icon(Icons.facebook),
+                  color: Colors.blue[400], // Color atractivo para Twitter
+                  onPressed: () {
+                    // Lógica para abrir el enlace de Twitter
+                  },
+                  tooltip: 'Twitter',
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+),
+
+
+      ],
+
+    
+  ),
+),
+
+
     );
   }
 }
